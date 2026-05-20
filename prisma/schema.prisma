@@ -9,7 +9,7 @@ datasource db {
 
 model Review {
   id         String   @id @default(uuid())
-  bookingId  String
+  bookingId  String   @unique
   carId      String
   userId     String
   rating     Int
