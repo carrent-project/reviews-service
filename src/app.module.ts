@@ -1,19 +1,23 @@
-import { Module } from '@nestjs/common';
-import { ReviewsController } from './reviews.controller';
-import { ReviewsService } from './reviews.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { PrismaService } from './prisma.service';
+import { Module } from "@nestjs/common";
+import { ReviewsController } from "./reviews.controller";
+import { ReviewsService } from "./reviews.service";
+import { ClientsModule, Transport } from "@nestjs/microservices";
+import { PrismaService } from "./prisma.service";
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: 'REVIEWS_SERVICE',
+        name: "CARS_SERVICE",
         transport: Transport.TCP,
-        options: {
-          host: 'localhost',
-          port: 5005,
-        },
+        options: { port: 5003 },
+      },
+    ]),
+    ClientsModule.register([
+      {
+        name: "BOOKING_SERVICE",
+        transport: Transport.TCP,
+        options: { port: 5004 },
       },
     ]),
   ],
