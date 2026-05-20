@@ -14,16 +14,20 @@ export class ReviewsService {
     private prisma: PrismaService,
   ) {}
 
-  async sayHi() {
+  async getReviewById(id: string): Promise<Review> {
     try {
-      return "Hi, im first method for test";
+      const foundReview = await this.prisma.review.findUnique({ where: { id } })
+      if (!foundReview) {
+        throw internalErrorHandler(404, `Review with id: ${id} is not found`);
+      }
+      return foundReview
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
 
-      console.error("Unexpected error during saing hi:", error);
-      throw internalErrorHandler(500, "Saing hi failed");
+      console.error("Unexpected error during getting review by id:", error);
+      throw internalErrorHandler(500, "Getting review by id failed");
     }
   }
 

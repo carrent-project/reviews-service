@@ -7,12 +7,12 @@ import { CreateNewReviewDto } from "@carrent/shared";
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @MessagePattern("reviews.say-hi")
-  async sayHi() {
+  @MessagePattern("reviews.get-review-by-id")
+  async getReviewById(@Payload() data: { id: string }) {
     try {
-      return await this.reviewsService.sayHi();
+      return await this.reviewsService.getReviewById(data.id);
     } catch (error: any) {
-      console.log("[Reviews Microservice] sayHi error:", error);
+      console.log("[Reviews Microservice] getReviewById error:", error);
       throw new RpcException({
         statusCode: error.status || 500,
         message: error.message || "Internal server error",
