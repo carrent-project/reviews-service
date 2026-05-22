@@ -16,11 +16,13 @@ export class ReviewsService {
 
   async getReviewById(id: string): Promise<Review> {
     try {
-      const foundReview = await this.prisma.review.findUnique({ where: { id } })
+      const foundReview = await this.prisma.review.findUnique({
+        where: { id },
+      });
       if (!foundReview) {
         throw internalErrorHandler(404, `Review with id: ${id} is not found`);
       }
-      return foundReview
+      return foundReview;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -31,11 +33,77 @@ export class ReviewsService {
     }
   }
 
+  async getCarReviewsByCarId(carId: string): Promise<Review[]> {
+    try {
+      const foundCar = await firstValueFrom(
+        this.carsClient.send("cars.get-car-by-id", { id: carId }),
+      );
+
+      if (!foundCar) {
+        throw internalErrorHandler(404, "Car is not found");
+      }
+      const foundReviews = await this.prisma.review.findMany({
+        where: { carId },
+      });
+      return foundReviews;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error(
+        "Unexpected error during getting car reviews by car id:",
+        error,
+      );
+      throw internalErrorHandler(500, "Getting review by id failed");
+    }
+  }
+
+  async getCarAverageRating(
+    carId: string,
+  ): Promise<{ average: number; totalReviews: number }> {
+    try {
+      const foundCar = await firstValueFrom(
+        this.carsClient.send("cars.get-car-by-id", { id: carId }),
+      );
+
+      if (!foundCar) {
+        throw internalErrorHandler(404, "Car is not found");
+      }
+
+      const result = await this.prisma.review.aggregate({
+        where: { carId, isApproved: true },
+        _avg: { rating: true },
+        _count: { id: true },
+      });
+      const { _avg, _count } = result;
+      return { average: _avg.rating ?? 0, totalReviews: _count.id };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error(
+        "Unexpected error during getting car average rating:",
+        error,
+      );
+      throw internalErrorHandler(500, "Getting review by id failed");
+    }
+  }
+
   async createNewReview(
     dto: CreateNewReviewDto,
     userId: string,
   ): Promise<Review> {
     try {
+      const reviewbyBookingId = await this.prisma.review.findUnique({
+        where: { bookingId: dto.bookingId },
+      });
+
+      if (reviewbyBookingId) {
+        throw internalErrorHandler(400, "You already have review");
+      }
+
       const foundCar = await firstValueFrom(
         this.carsClient.send("cars.get-car-by-id", { id: dto.carId }),
       );
@@ -71,12 +139,14 @@ export class ReviewsService {
 
   async removeReviewById(id: string): Promise<string> {
     try {
-      const foundReview = await this.prisma.review.findUnique({ where: { id } })
+      const foundReview = await this.prisma.review.findUnique({
+        where: { id },
+      });
       if (!foundReview) {
         throw internalErrorHandler(404, `Review with id: ${id} is not found`);
       }
-      const removable = await this.prisma.review.delete({where: { id }});
-      return removable.id
+      const removable = await this.prisma.review.delete({ where: { id } });
+      return removable.id;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -84,6 +154,43 @@ export class ReviewsService {
 
       console.error("Unexpected error during removing review by id:", error);
       throw internalErrorHandler(500, "Remove review by id failed");
+    }
+  }
+
+  async removeReviewByBookingId(bookingId: string): Promise<string> {
+    try {
+      const foundReview = await this.prisma.review.findUnique({
+        where: { bookingId },
+      });
+      if (!foundReview) {
+        throw internalErrorHandler(404, `Review with bookingId: ${bookingId} is not found`);
+      }
+      const removable = await this.prisma.review.delete({ where: { bookingId } });
+      return removable.id;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error("Unexpected error during removing review by id:", error);
+      throw internalErrorHandler(500, "Remove review by id failed");
+    }
+  }
+
+  async approveReview(id: string, isApproved: boolean): Promise<boolean> {
+    try {
+      const review = await this.prisma.review.update({
+        where: { id },
+        data: { isApproved },
+      });
+      return review.isApproved;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error("Unexpected error during approving review by id:", error);
+      throw internalErrorHandler(500, "Approving review by id failed");
     }
   }
 }

@@ -20,6 +20,32 @@ export class ReviewsController {
     }
   }
 
+  @MessagePattern("reviews.get-car-reviews-by-car-id")
+  async getCarReviewsByCarId(@Payload() data: { carId: string }) {
+    try {
+      return await this.reviewsService.getCarReviewsByCarId(data.carId)
+    } catch (error: any) {
+      console.log("[Reviews Microservice] getCarReviewsByCarId error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+
+  @MessagePattern("reviews.get-car-average-rating")
+  async getCarAverageRating(@Payload() data: { carId: string }) {
+    try {
+      return await this.reviewsService.getCarAverageRating(data.carId)
+    } catch (error: any) {
+      console.log("[Reviews Microservice] getCarAverageRating error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+
   @MessagePattern("reviews.create-review")
   async createNewReview(
     @Payload() data: { dto: CreateNewReviewDto; userId: string },
@@ -39,8 +65,34 @@ export class ReviewsController {
   async removeReviewById(@Payload() data: { id: string }) {
     try {
       return await this.reviewsService.removeReviewById(data.id)
-    } catch (error) {
+    } catch (error: any) {
       console.log("[Reviews Microservice] removeReviewById error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+
+  @MessagePattern("reviews.remove-review-by-booking-id")
+  async removeReviewByBookingId(@Payload() data: { bookingId: string }) {
+    try {
+      return await this.reviewsService.removeReviewByBookingId(data.bookingId)
+    } catch (error: any) {
+      console.log("[Reviews Microservice] removeReviewById error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+
+  @MessagePattern("reviews.approve-review")
+  async approveReview(@Payload() data: { id: string, isApproved: boolean }) {
+    try {
+      return await this.reviewsService.approveReview(data.id, data.isApproved)
+    } catch (error: any) {
+      console.log("[Reviews Microservice] approveReview error:", error);
       throw new RpcException({
         statusCode: error.status || 500,
         message: error.message || "Internal server error",
