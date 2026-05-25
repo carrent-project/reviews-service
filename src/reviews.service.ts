@@ -59,35 +59,36 @@ export class ReviewsService {
     }
   }
 
-  async getCarAverageRating(
-    carId: string,
-  ): Promise<{ average: number; totalReviews: number }> {
+  async getCarsAverageRating(
+    carIds: string[],
+  ): Promise<{ carId: string; average: number; totalReviews: number }[]> {
     try {
-      const foundCar = await firstValueFrom(
-        this.carsClient.send("cars.get-car-by-id", { id: carId }),
-      );
-
-      if (!foundCar) {
-        throw internalErrorHandler(404, "Car is not found");
-      }
-
-      const result = await this.prisma.review.aggregate({
-        where: { carId, isApproved: true },
+      const result = await this.prisma.review.groupBy({
+        by: ["carId"],
+        where: {
+          carId: { in: carIds },
+          isApproved: true,
+        },
         _avg: { rating: true },
         _count: { id: true },
       });
-      const { _avg, _count } = result;
-      return { average: _avg.rating ?? 0, totalReviews: _count.id };
+      const ratings = result.map((r) => ({
+        carId: r.carId,
+        average: r._avg.rating ?? 0,
+        totalReviews: r._count.id,
+      }));
+      console.log('==> carId: ', ratings)
+      return ratings;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
 
       console.error(
-        "Unexpected error during getting car average rating:",
+        "Unexpected error during getting cars average rating:",
         error,
       );
-      throw internalErrorHandler(500, "Getting review by id failed");
+      throw internalErrorHandler(500, "Getting cars average rating");
     }
   }
 
@@ -163,9 +164,14 @@ export class ReviewsService {
         where: { bookingId },
       });
       if (!foundReview) {
-        throw internalErrorHandler(404, `Review with bookingId: ${bookingId} is not found`);
+        throw internalErrorHandler(
+          404,
+          `Review with bookingId: ${bookingId} is not found`,
+        );
       }
-      const removable = await this.prisma.review.delete({ where: { bookingId } });
+      const removable = await this.prisma.review.delete({
+        where: { bookingId },
+      });
       return removable.id;
     } catch (error) {
       if (error instanceof HttpException) {

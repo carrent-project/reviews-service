@@ -33,12 +33,12 @@ export class ReviewsController {
     }
   }
 
-  @MessagePattern("reviews.get-car-average-rating")
-  async getCarAverageRating(@Payload() data: { carId: string }) {
+  @MessagePattern("reviews.get-cars-average-rating")
+  async getCarsAverageRating(@Payload() data: { carIds: string[] }) {
     try {
-      return await this.reviewsService.getCarAverageRating(data.carId)
+      return await this.reviewsService.getCarsAverageRating(data.carIds)
     } catch (error: any) {
-      console.log("[Reviews Microservice] getCarAverageRating error:", error);
+      console.log("[Reviews Microservice] getCarsAverageRating error:", error);
       throw new RpcException({
         statusCode: error.status || 500,
         message: error.message || "Internal server error",
