@@ -1,7 +1,7 @@
 import { Injectable, HttpException, Inject } from "@nestjs/common";
 import { PrismaService } from "./prisma.service";
 import { internalErrorHandler } from "./utils";
-import { CreateNewReviewDto } from "@carrent/shared";
+import { CreateNewReviewDto, PaginatedReviewsResponse } from "@carrent/shared";
 import { ClientProxy } from "@nestjs/microservices";
 import { firstValueFrom } from "rxjs";
 import { Review } from "@prisma/client";
@@ -77,7 +77,6 @@ export class ReviewsService {
         average: r._avg.rating ?? 0,
         totalReviews: r._count.id,
       }));
-      console.log('==> carId: ', ratings)
       return ratings;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -89,6 +88,48 @@ export class ReviewsService {
         error,
       );
       throw internalErrorHandler(500, "Getting cars average rating");
+    }
+  }
+
+  async getCarReviewsById(
+    carId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedReviewsResponse> {
+    try {
+      const skip = (page - 1) * limit;
+      const [reviews, total] = await this.prisma.$transaction([
+        this.prisma.review.findMany({
+          where: { carId, isApproved: true },
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.review.count({ where: { carId, isApproved: true } }),
+      ]);
+      return {
+        data: reviews,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error(
+        "Unexpected error during getting car reviews by id:",
+        error,
+      );
+      throw internalErrorHandler(500, "Getting car reviews by id");
     }
   }
 

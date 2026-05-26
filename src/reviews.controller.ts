@@ -46,6 +46,19 @@ export class ReviewsController {
     }
   }
 
+  @MessagePattern("reviews.get-car-reviews-by-id")
+  async getCarReviewsById(@Payload() data: { carId: string, page: number, limit: number }) {
+    try {
+      return await this.reviewsService.getCarReviewsById(data.carId, data.page, data.limit)
+    } catch (error: any) {
+      console.log("[Reviews Microservice] getCarReviewsById error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });   
+    }
+  }
+
   @MessagePattern("reviews.create-review")
   async createNewReview(
     @Payload() data: { dto: CreateNewReviewDto; userId: string },
