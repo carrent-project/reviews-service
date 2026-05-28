@@ -20,6 +20,19 @@ export class ReviewsController {
     }
   }
 
+  @MessagePattern("reviews.get-review-by-booking-id")
+  async getReviewByBookingId(@Payload() data: { bookingId: string }) {
+    try {
+      return await this.reviewsService.getReviewByBookingId(data.bookingId);
+    } catch (error: any) {
+      console.log("[Reviews Microservice] getReviewByBookingId error:", error);
+      throw new RpcException({
+        statusCode: error.status || 500,
+        message: error.message || "Internal server error",
+      });
+    }
+  }
+
   @MessagePattern("reviews.get-car-reviews-by-car-id")
   async getCarReviewsByCarId(@Payload() data: { carId: string }) {
     try {

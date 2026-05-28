@@ -33,6 +33,22 @@ export class ReviewsService {
     }
   }
 
+  async getReviewByBookingId(bookingId: string): Promise<Review | null> {
+    try {
+      const foundReview = await this.prisma.review.findUnique({
+        where: { bookingId },
+      });
+      return foundReview;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      console.error("Unexpected error during getting review by booking id:", error);
+      throw internalErrorHandler(500, "Getting review by id failed");
+    }
+  }
+
   async getCarReviewsByCarId(carId: string): Promise<Review[]> {
     try {
       const foundCar = await firstValueFrom(
